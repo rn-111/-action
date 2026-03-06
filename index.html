@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Side-Scrolling Action Game</title>
+    <style>
+        body { margin: 0; background: #222; color: white; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        canvas { background: #333; border-bottom: 4px solid #555; display: block; margin-top: 20px; }
+        .ui { margin-top: 10px; font-size: 20px; font-weight: bold; }
+        .controls { margin-top: 5px; color: #aaa; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="ui">STAGE: <span id="stage">1</span> | <span id="msg">ゴールを目指せ！</span></div>
+    <canvas id="gameCanvas"></canvas>
+    <div class="controls">操作：【クリック】または【スペースキー】でジャンプ</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const stageEl = document.getElementById("stage");
+const msgEl = document.getElementById("msg");
+
+// ゲーム設定
+canvas.width = 800;
+canvas.height = 300;
+let stage = 1;
+let gameSpeed = 3;
+let isGameOver = false;
+
+// プレイヤー
+const player = {
+    x: 50, y: 200, w: 30, h: 30,
+    dy: 0, jumpForce: -12, gravity: 0.6,
+    grounded: false
+};
+
+// ステージ構成（障害物の位置）
+let obstacles = [];
+let goalX = 2000; // ゴールの位置
+
+function initStage() {
+    obstacles = [];
+    goalX = 1500 + (stage * 500); // ステージが上がるごとに距離が伸びる
+    gameSpeed = 3 + (stage * 1.5); // 速度アップ
+    
+    // 障害物をランダム生成
+    for (let i = 400; i < goalX - 200; i += 300 + Math.random() * 200) {
+        obstacles.push({ x: i, w: 30, h: 40 + Math.random() * 40 });
+    }
+    isGameOver = false;
+    player.x = 50;
+    msgEl.innerText = "STAGE " + stage + " START!";
+    msgEl.style.color = "#0f0";
+}
+
+// 入力処理
+function jump() {
+    if (player.grounded) {
+        player.dy = player.jumpForce;
+        player.grounded = false;
+    }
+    if (isGameOver) {
+        stage = 1;
+        initStage();
+    }
+}
+window.addEventListener("keydown", (e) => { if (e.code === "Space") jump(); });
+canvas.addEventListener("mousedown", jump);
+
+function update() {
+    if (isGameOver) return;
+
+    // 重力計算
+    player.dy += player.gravity;
+    player.y += player.dy;
+
+    // 地面判定
+    if (player.y + player.h > canvas.height - 20) {
+        player.y = canvas.height - 20 - player.h;
+        player.dy = 0;
+        player.grounded = true;
+    }
+
+    // プレイヤーの進行
+    player.x += gameSpeed;
+
+    // 障害物衝突判定
+    obstacles.forEach(ob => {
+        if (player.x < ob.x + ob.w && player.x + player.w > ob.x &&
+            player.y + player.h > canvas.height - 20 - ob.h) {
+            msgEl.innerText = "GAME OVER! (クリックでリトライ)";
+            msgEl.style.color = "#f00";
+            isGameOver = true;
+        }
+    });
+
+    // ゴール判定
+    if (player.x > goalX) {
+        stage++;
+        stageEl.innerText = stage;
+        initStage();
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // カメラの追従（プレイヤーが中央にくるように背景をずらす）
+    ctx.save();
+    ctx.translate(-player.x + 100, 0);
+
+    // 地面
+    ctx.fillStyle = "#555";
+    ctx.fillRect(player.x - 100, canvas.height - 20, canvas.width + 100, 20);
+
+    // ゴール地点
+    ctx.fillStyle = "#ff0";
+    ctx.fillRect(goalX, 0, 10, canvas.height);
+    ctx.fillText("GOAL", goalX - 10, 50);
+
+    // 障害物
+    ctx.fillStyle = "#f33";
+    obstacles.forEach(ob => {
+        ctx.fillRect(ob.x, canvas.height - 20 - ob.h, ob.w, ob.h);
+    });
+
+    // プレイヤー
+    ctx.fillStyle = "#0af";
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+
+    ctx.restore();
+
+    update();
+    requestAnimationFrame(draw);
+}
+
+initStage();
+draw();
+</script>
+</body>
+</html>
