@@ -142,3 +142,203 @@ draw();
 </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Theme Action Game</title>
+    <style>
+        body { margin: 0; background: #1a1a1a; color: white; font-family: 'Helvetica Neue', Arial, sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        canvas { background: #333; border-bottom: 4px solid #fff; display: block; margin-top: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .ui-panel { margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.7); border-radius: 8px; text-align: center; min-width: 600px; }
+        #menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 30px; border-radius: 15px; text-align: center; border: 2px solid #0af; z-index: 10; }
+        input { padding: 10px; font-size: 16px; border-radius: 5px; border: none; margin-bottom: 10px; width: 200px; }
+        button { padding: 10px 20px; font-size: 16px; background: #0af; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0088cc; }
+        .ranking { margin-top: 15px; font-size: 14px; text-align: left; max-height: 150px; overflow-y: auto; }
+        .ranking h3 { border-bottom: 1px solid #555; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="menu">
+        <h1>RUNNER GAME</h1>
+        <p>名前を入力してスタート！</p>
+        <input type="text" id="playerName" placeholder="なまえ" maxlength="10"><br>
+        <button onclick="startGame()">GAME START</button>
+        <div class="ranking">
+            <h3>Top Scores</h3>
+            <div id="rankingList"></div>
+        </div>
+    </div>
+
+    <div class="ui-panel">
+        <span id="displayLabel">PLAYER: ---</span> | 
+        STAGE: <span id="stage">1</span> (<span id="themeName">自然</span>) | 
+        SCORE: <span id="score">0</span>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    <p style="color:#888;">【Space】 or 【Click】 to Jump</p>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const menu = document.getElementById("menu");
+const playerNameInput = document.getElementById("playerName");
+const rankingList = document.getElementById("rankingList");
+
+canvas.width = 800;
+canvas.height = 350;
+
+// ゲーム状態
+let gameState = "MENU";
+let playerName = "Unknown";
+let stage = 1;
+let score = 0;
+let gameSpeed = 4;
+let isGameOver = false;
+
+// テーマ設定
+const themes = [
+    { name: "自然", bg: "#4a7c44", ground: "#2d5a27", obstacle: "#5d4037" }, // 森
+    { name: "都会", bg: "#2c3e50", ground: "#7f8c8d", obstacle: "#f1c40f" }, // ビル街
+    { name: "宇宙", bg: "#000033", ground: "#483d8b", obstacle: "#00ffff" }, // サイバー
+    { name: "火山", bg: "#4b0000", ground: "#8b0000", obstacle: "#ff4500" }  // マグマ
+];
+
+// エンティティ
+const player = { x: 80, y: 200, w: 30, h: 30, dy: 0, jumpForce: -12, gravity: 0.6, grounded: false };
+let obstacles = [];
+let goalX = 2000;
+
+// ランキング表示
+function updateRankingUI() {
+    const scores = JSON.parse(localStorage.getItem("gameScores") || "[]");
+    rankingList.innerHTML = scores.map((s, i) => `<div>${i+1}. ${s.name}: ${s.score}pt (St${s.stage})</div>`).join('');
+}
+updateRankingUI();
+
+function startGame() {
+    playerName = playerNameInput.value || "名無し";
+    document.getElementById("displayLabel").innerText = "PLAYER: " + playerName;
+    menu.style.display = "none";
+    gameState = "PLAY";
+    stage = 1;
+    score = 0;
+    initStage();
+    draw();
+}
+
+function initStage() {
+    const themeIdx = (stage - 1) % themes.length;
+    const theme = themes[themeIdx];
+    
+    document.getElementById("themeName").innerText = theme.name;
+    document.getElementById("stage").innerText = stage;
+    canvas.style.background = theme.bg;
+
+    obstacles = [];
+    goalX = 1500 + (stage * 800);
+    gameSpeed = 4 + (stage * 1.2);
+    
+    for (let i = 500; i < goalX - 300; i += 400 + Math.random() * 300) {
+        obstacles.push({ x: i, w: 30, h: 40 + Math.random() * 50 });
+    }
+    player.x = 80;
+    isGameOver = false;
+}
+
+function saveScore() {
+    let scores = JSON.parse(localStorage.getItem("gameScores") || "[]");
+    scores.push({ name: playerName, score: Math.floor(score), stage: stage });
+    scores.sort((a, b) => b.score - a.score);
+    localStorage.setItem("gameScores", JSON.stringify(scores.slice(0, 5)));
+    updateRankingUI();
+}
+
+function jump() {
+    if (player.grounded && !isGameOver) {
+        player.dy = player.jumpForce;
+        player.grounded = false;
+    }
+    if (isGameOver) {
+        menu.style.display = "block";
+        gameState = "MENU";
+    }
+}
+
+window.addEventListener("keydown", (e) => { if (e.code === "Space") jump(); });
+canvas.addEventListener("mousedown", jump);
+
+function update() {
+    if (isGameOver || gameState !== "PLAY") return;
+
+    player.dy += player.gravity;
+    player.y += player.dy;
+
+    if (player.y + player.h > canvas.height - 30) {
+        player.y = canvas.height - 30 - player.h;
+        player.dy = 0;
+        player.grounded = true;
+    }
+
+    player.x += gameSpeed;
+    score += 0.1;
+    document.getElementById("score").innerText = Math.floor(score);
+
+    const theme = themes[(stage - 1) % themes.length];
+    obstacles.forEach(ob => {
+        if (player.x < ob.x + ob.w && player.x + player.w > ob.x &&
+            player.y + player.h > canvas.height - 30 - ob.h) {
+            isGameOver = true;
+            saveScore();
+            alert("GAME OVER! スコア: " + Math.floor(score));
+        }
+    });
+
+    if (player.x > goalX) {
+        stage++;
+        initStage();
+    }
+}
+
+function draw() {
+    if (gameState !== "PLAY") return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const theme = themes[(stage - 1) % themes.length];
+
+    ctx.save();
+    ctx.translate(-player.x + 100, 0);
+
+    // 地面
+    ctx.fillStyle = theme.ground;
+    ctx.fillRect(player.x - 100, canvas.height - 30, canvas.width + 100, 30);
+
+    // 障害物
+    ctx.fillStyle = theme.obstacle;
+    obstacles.forEach(ob => {
+        ctx.fillRect(ob.x, canvas.height - 30 - ob.h, ob.w, ob.h);
+    });
+
+    // ゴール
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(goalX, 0, 5, canvas.height);
+
+    // プレイヤー（頭の上に名前を表示）
+    ctx.fillStyle = "#0af";
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.fillStyle = "white";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(playerName, player.x - 5, player.y - 10);
+
+    ctx.restore();
+
+    update();
+    requestAnimationFrame(draw);
+}
+</script>
+</body>
+</html>
