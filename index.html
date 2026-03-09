@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theme Runner - GitHub Edition</title>
+    <title>Theme Runner - Theme Image Edition</title>
     <style>
         body { margin: 0; background: #1a1a1a; color: white; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
         canvas { background: #333; border-bottom: 4px solid #fff; display: block; margin-top: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: pointer; }
@@ -20,7 +20,6 @@
 </head>
 <body>
 
-    <!-- 開始・終了メニュー -->
     <div id="menu">
         <h1 id="menuTitle">THEME RUNNER</h1>
         <p id="menuMsg">名前を入力してスタート！</p>
@@ -32,7 +31,6 @@
         </div>
     </div>
 
-    <!-- プレイ中のUI -->
     <div class="ui-panel">
         <span id="displayLabel" style="color:#0af; font-weight:bold;">PLAYER: ---</span> | 
         STAGE: <span id="stage">1</span> (<span id="themeName">自然</span>) | 
@@ -53,6 +51,42 @@ const rankingList = document.getElementById("rankingList");
 canvas.width = 800;
 canvas.height = 350;
 
+// --- プレイヤー画像（固定） ---
+const imgPlayer = new Image();
+imgPlayer.src = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiRuu0RWoeHs26-kJWDLyILcJZ9OljBuc_LyatexrDqGsYOBKNqKJWrt_jKhFATb1jmj124nhh4vTprkPzcRYemzFuSxbCR9cGFomOZx-vnOwQ5a16_4TmbjRWUolmtkNHg_d_5h-BtyvoTMJCvJ6ZmiiiSyu_0RfsbAStBrMaoUm8HN6NFJHIi-Lv8f0hh/s790/bird_fukurou_run.png";
+
+// --- テーマごとの設定（画像を含む） ---
+const themes = [
+    { 
+        name: "自然", 
+        ground: "#2d5a27",
+        bgSrc: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj9nSlEdzOidnQt0USF9t7eH1RAUmOb-XUVRNhRl2uVQsyv_ApsFy9RyUhQAUFm9C-Atd_1jMZmzrdUraTh-HKrE09sQxj_yc4xBo48KIioEK3CvJGFOcRXkTbNswoGozKQwfdr4u4CC3nb/s600/bg_natural_mori.jpg", 
+        obsSrc: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiS2GlvLg0cLpUQNIcxW75eAVMOlRalWqk-92ZBxEDLgrx0XwJ4T4FMIi7mgRa41JVMKAbajqGo4yYqVfPk6vzUun1lIhbr9k9r8CociJ7ClRzUZw7vyD69HU2b8eq9RK5AhooNpOICKCHR/s800/tree_shirakaba.png" 
+    },
+    { 
+        name: "都会", 
+        ground: "#7f8c8d",
+        bgSrc: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjDCKwjioUdGQ6i-1MP6Oj5nQAW6e3g5dYy5ntfwFT91hvTlf1652B1-jg8_y_L3ebMrH1FKP5BY6tJCmR6dbYDZKLxEMQvKgkcAXqs1WLBe62eFof-0E9EXALV3Xr97Y0KdY1FvdZIXvXB/s600/bg_outside_buildings.jpg", 
+        obsSrc: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhN5RYrCOC6hIGxyKnHRuVBk81NV5fMaYmrIvcDgDkGVGggAFjnbwpGbHnSCopeGLzKjf_4AXYL-bKhuQq7qVRyElS_fTkXEN1cxXEqnKzcFEAVHZ5fzlH_-nD0OXitY944hV60jJmTV8mQ/s800/10shinjuku.png" 
+    },
+    { 
+        name: "宇宙", 
+        ground: "#483d8b",
+        bgSrc: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiHx14z8OPn_FdFm5bNQeukdyVrvYmBWvnEpB4Bq1Z9LQEbrFzhn4BDdjlxp4EbpuyMBBi3ZIQYSpqhrOzKV8AFa1fW_f1JCE3bRVIl4DY45n4tls_LynM1XoZxjWrFhr5SiJZw8iEZRP_J/s600/bg_uchu_space.jpg", 
+        obsSrc: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhrtNBtKtHifu7qoZF0bCOQQcCcwqeKYU80Vpv2uEke8UQrbsFOJiXLVfwTQxojH1lgQfqLgYRiIR9v6vhgoHs1IsuDpJvE8GhUtp97Bdg_O8sWszD6fVbOZEQ82UdTfrhoJR5gOCVe67w/s450/space07_saturn.png" 
+    },
+    { 
+        name: "火山", 
+        ground: "#8b0000",
+        bgSrc: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiegv99eh1H8YR4DoW-JaoLOiF8-QnFjvDy77b-B0Rwax3tRqJz35ixXasm6LAXkNWCGsHXBBMygQYyvMo53kF1fB5sJV7CVpiTd5LABLzVsraQRZuyBw2fq9wDZbtSqFQtKh6uocVuk-Y/s180-c/kagoshima_sakurajima.png", 
+        obsSrc: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhsFIHgbPZWCEFBnKQsiKEzU6T_yAGycWdGfW5R3FiOBEnMyWZxbTf5ukepW7MKBtr8R5hTUYHvrBCFIZEBx44MNZ0zalA8ebsfb6-JueRt-bV_xIV0YVKKVXxUaix1hqjw8PAKqy9z6f0/s400/shizensaigai_funka.png" 
+    }
+];
+
+// 現在のステージ用画像オブジェクト
+let currentImgBg = new Image();
+let currentImgObs = new Image();
+
 // ゲーム変数
 let gameState = "MENU";
 let playerName = "Unknown";
@@ -61,20 +95,10 @@ let score = 0;
 let gameSpeed = 5;
 let isGameOver = false;
 
-// テーマ設定（背景, 地面, 障害物）
-const themes = [
-    { name: "自然", bg: "#4a7c44", ground: "#2d5a27", obstacle: "#5d4037" },
-    { name: "都会", bg: "#2c3e50", ground: "#7f8c8d", obstacle: "#f1c40f" },
-    { name: "宇宙", bg: "#000033", ground: "#483d8b", obstacle: "#00ffff" },
-    { name: "火山", bg: "#4b0000", ground: "#8b0000", obstacle: "#ff4500" }
-];
-
-// エンティティ
-const player = { x: 80, y: 200, w: 30, h: 30, dy: 0, jumpForce: -12, gravity: 0.6, grounded: false };
+const player = { x: 80, y: 200, w: 50, h: 50, dy: 0, jumpForce: -12, gravity: 0.6, grounded: false };
 let obstacles = [];
 let goalX = 2000;
 
-// ランキング読み込み
 function updateRankingUI() {
     const scores = JSON.parse(localStorage.getItem("themeRunnerScores") || "[]");
     rankingList.innerHTML = scores.length ? 
@@ -98,15 +122,17 @@ function initStage() {
     const theme = themes[(stage - 1) % themes.length];
     document.getElementById("themeName").innerText = theme.name;
     document.getElementById("stage").innerText = stage;
-    canvas.style.background = theme.bg;
+    
+    // 画像の切り替え
+    currentImgBg.src = theme.bgSrc;
+    currentImgObs.src = theme.obsSrc;
 
     obstacles = [];
     goalX = 1500 + (stage * 800);
     gameSpeed = 5 + (stage * 1.0);
     
-    // 障害物生成
     for (let i = 500; i < goalX - 300; i += 350 + Math.random() * 300) {
-        obstacles.push({ x: i, w: 30, h: 40 + Math.random() * 50 });
+        obstacles.push({ x: i, w: 50, h: 50 }); // 障害物サイズを固定（画像に合わせて調整）
     }
     player.x = 80;
     isGameOver = false;
@@ -127,31 +153,25 @@ function jump() {
     }
 }
 
-// イベント
 window.addEventListener("keydown", (e) => { if (e.code === "Space") jump(); });
 canvas.addEventListener("mousedown", jump);
 
 function update() {
     if (isGameOver || gameState !== "PLAY") return;
 
-    // 重力
     player.dy += player.gravity;
     player.y += player.dy;
 
-    // 地面着地
     if (player.y + player.h > canvas.height - 30) {
         player.y = canvas.height - 30 - player.h;
         player.dy = 0;
         player.grounded = true;
     }
 
-    // 移動とスコア
     player.x += gameSpeed;
     score += 0.1;
     document.getElementById("score").innerText = Math.floor(score);
 
-    // 衝突判定
-    const theme = themes[(stage - 1) % themes.length];
     obstacles.forEach(ob => {
         if (player.x < ob.x + ob.w && player.x + player.w > ob.x &&
             player.y + player.h > canvas.height - 30 - ob.h) {
@@ -159,7 +179,6 @@ function update() {
         }
     });
 
-    // 次のステージ判定
     if (player.x > goalX) {
         stage++;
         initStage();
@@ -180,32 +199,36 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const theme = themes[(stage - 1) % themes.length];
 
+    // 背景画像（全画面）
+    if (currentImgBg.complete) {
+        ctx.drawImage(currentImgBg, 0, 0, canvas.width, canvas.height);
+    }
+
     ctx.save();
     ctx.translate(-player.x + 100, 0);
 
-    // 地面描画
+    // 地面（テーマごとの色）
     ctx.fillStyle = theme.ground;
     ctx.fillRect(player.x - 100, canvas.height - 30, canvas.width + 100, 30);
 
-    // 障害物描画
-    ctx.fillStyle = theme.obstacle;
+    // 障害物（テーマごとの画像）
     obstacles.forEach(ob => {
-        ctx.fillRect(ob.x, canvas.height - 30 - ob.h, ob.w, ob.h);
+        if (currentImgObs.complete) {
+            ctx.drawImage(currentImgObs, ob.x, canvas.height - 30 - ob.h, ob.w, ob.h);
+        }
     });
 
-    // ゴール線
+    // ゴール
     ctx.fillStyle = "white";
     ctx.fillRect(goalX, 0, 5, canvas.height);
-    ctx.font = "bold 20px sans-serif";
-    ctx.fillText("NEXT STAGE", goalX + 10, 50);
 
-    // プレイヤー描画
-    ctx.fillStyle = "#0af";
-    ctx.fillRect(player.x, player.y, player.w, player.h);
+    // プレイヤー画像
+    if (imgPlayer.complete) {
+        ctx.drawImage(imgPlayer, player.x, player.y, player.w, player.h);
+    }
     
-    // 名前表示
     ctx.fillStyle = "white";
-    ctx.font = "14px sans-serif";
+    ctx.font = "bold 14px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(playerName, player.x + player.w/2, player.y - 10);
 
